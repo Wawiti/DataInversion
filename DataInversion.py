@@ -29,9 +29,9 @@ fp_split = fp_name2.split('x', fp_len)      # split at x characters
 row = int(fp_split[0])       # get number of rows
 col = int(fp_split[1])       # get number of columns
 samp = int(fp_split[2])      # get number of samples per location
-spac = int(re.search(r'\d*\.*\d*', fp_split[3]).group())      # get spacing
+spac = re.search(r'\d*\.*\d*', fp_split[3]).group()      # get spacing
 # T = input('Enter film thickness (without current collector): ')
-T = 60
+T = 40
 
 data = pd.read_csv(file_path, delimiter=",",
                    header=None).values  # Get values out of csv
@@ -92,13 +92,23 @@ print('Pre-Inversion Error Checking Complete (',
 # Data inversion, and precomputation of some harder stuff
 # -----------------------------------------------------------------
 start = time.time()
-precompute()
+[LL, N, M, bigJ, bigH, bigHH, mu2, lam2, STinf, STinfL] = precompute()
 end = time.time()
 print('Precomputations complete (', round(end-start, 5), 'seconds elapsed )')
 print('Beginning Inversion...')
 start = time.time()
+Condx = []
+Condy = []
+R0 = []
+Rc = []
 for ind in range(0, len(locData)):
-    cond(T, locData[ind], ind)
+    [condx, condy, r0, rc] = cond(T, locData[ind][:, [0, 2, 4, 6, 8]], ind,
+                                  LL, N, M, bigJ, bigH, bigHH, mu2, lam2,
+                                  STinf, STinfL)
+    Condx.append(condx)
+    Condy.append(condy)
+    R0.append(r0)
+    Rc.append(rc)
 end = time.time()
 print('Inversion Complete (', round(end-start, 5), 'seconds elapsed )')
 print('Plotting Results...')
