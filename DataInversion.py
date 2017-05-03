@@ -1,3 +1,10 @@
+"""
+Created on Thu Apr 27 09:22:16 2017
+Inversion Routine Main
+@author: John Vogel
+This file parses the data from a .csv file, performs error checking
+and passes it in the correct format to the inversion functions
+"""
 import numpy as np         # Data manipulation
 import matplotlib.pyplot as plt
 import pandas as pd        # Use to read in csv file
@@ -45,7 +52,6 @@ pastLoc = data[0, 9]            # Grab the current location value
 loc = 0                         # Location Counter
 locInd = 0                      # Current location index
 locData = []                    # List of data by location
-locErr = []                     # List of Error flags by location
 dataTemp = np.zeros((samp*12, 30))
 for ind in range(0, len(data)):     # Iterate through All Data
     currLoc = data[ind, 9]          # Current location
@@ -53,12 +59,10 @@ for ind in range(0, len(data)):     # Iterate through All Data
         loc = loc + 1               # increment location counter
         pastLoc = currLoc           # Set past location
         locInd = ind                # Record where we switched locations
-        locErr.append(np.zeros((samp*12, 1)))   # Initialize errors to 0
         locData.append(dataTemp)    # Store values in a list of matrices
         dataTemp = np.zeros((samp*12, 30))      # Reinitialize matrix
     dataTemp[ind-locInd, :] = data[ind, :]        # Measurements for location
 locData.append(dataTemp)            # Drop in the last set of values
-locErr.append(np.zeros((samp*12, 1)))
 
 # -----------------------------------------------------------------
 # If resistance data has been taken then this section sets
@@ -66,21 +70,20 @@ locErr.append(np.zeros((samp*12, 1)))
 # -----------------------------------------------------------------
 if data.shape[1] > 20:              # If the measurements include resistance
     for ind in range(len(locData)):
-        dataTemp = locData[ind]
-        LCC = dataTemp[:, 24:29]   # Line to current Collector
-        CL = dataTemp[:, [13, 15, 17, 19, 21, 23]]  # Across Line
-        IL = dataTemp[:, [14, 16, 18, 20, 22]]      # Inter-line
-        for ind2 in range(len(LCC)):                # Check Line-CC
+        LCC = locData[ind][:, 24:29]   # Line to current Collector
+        CL = locData[ind][:, [13, 15, 17, 19, 21, 23]]  # Across Line
+        IL = locData[ind][:, [14, 16, 18, 20, 22]]      # Inter-line
+        for ind2 in range(len(LCC)):            # Check Line-CC
             if max(LCC[ind2, :]) > 1e6:
-                locErr[ind][ind2, :] = 1
-        for ind2 in range(len(CL)):                 # Check line begin-end
+                locData[ind][ind2, 8] = 0       # Set exper to 0 (error flag)
+        for ind2 in range(len(CL)):             # Check line begin-end
             for ind3 in range(0, 6):
                 if CL[ind2, ind3] > 1e10:
-                    locErr[ind][ind2, :] = 1
-        for ind2 in range(len(IL)):                 # Check Inter-line
+                    locData[ind][ind2, 8] = 0   # Set exper to 0 (error flag)
+        for ind2 in range(len(IL)):             # Check Inter-line
             for ind3 in range(0, 5):
                 if IL[ind2, ind3] < 1e10:
-                    locErr[ind][ind2, :] = 1
+                    locData[ind][ind2, 8] = 0   # Set exper to 0 (error flag)
 end = time.time()
 print('Pre-Inversion Error Checking Complete (',
       round(end-start, 5), 'seconds elapsed )')
@@ -114,5 +117,3 @@ print('Inversion Complete (', round(end-start, 5), 'seconds elapsed )')
 print('Plotting Results...')
 endT = time.time()
 print('Complete, Total Time:', round(endT-startT, 5), 'seconds')
-
-# plt.plot(data[:, 9])
