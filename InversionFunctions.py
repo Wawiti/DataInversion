@@ -1,16 +1,17 @@
-# -*- coding: utf-8 -*-
 """
 Created on Thu Apr 27 09:22:16 2017
-Inversion Routine Main File
+Inversion Routine Functions
 @author: John Vogel
-Call the whole function in chuncks based on location
+This file has all the functions called in the main file and is the meat of
+the actual data inversion
 """
 import numpy as np
 import time
 
+
 """
-INVERT:
-Function to actually calculate the optimization
+Get Shape Factor
+Function to get the shape factors for a given R0 and thickness
 """
 
 
@@ -103,7 +104,7 @@ def invertIsotropic(T, rho, rhoL, rcert, rcertL, E1, N, M, bigJ, bigH, bigHH,
     sigy = 0
     for ind in range(0, Nexp):
         sigy = sigy + Shape[int(et[ind])] / (rho[ind] * Nexp)
-    
+
     # Convert sigy, and R0 to independent vectors using log scale, this
     # prevents them from going negative and allows the guess values to change
     # quickly, covering a lot of ground
@@ -137,7 +138,7 @@ def invertIsotropic(T, rho, rhoL, rcert, rcertL, E1, N, M, bigJ, bigH, bigHH,
             JT[0, ind] = -asrr * np.sqrt(1 + sigy * sigy) / sigy
             JT[1, ind] = np.sqrt(1 + R0 * R0) * dSLdR0[int(et2[ind])] * rcertL[ii] * rcert2
         f.append(b2 * np.exp(-b2 * R0))
-        temp = np.array(([0],[-b2 * np.sqrt(1 + R0**2) * f[Nexp2]]))
+        temp = np.array(([0], [-b2 * np.sqrt(1 + R0**2) * f[Nexp2]]))
         JT = np.hstack((JT, temp))
         errtot = errtot + f[Nexp2]**2
 
@@ -254,8 +255,8 @@ def cond(T, Data, location, LL, N, M, bigJ, bigH, bigHH, mu2, lam2,
                 else:
                     rcert[end] = 0
         if(breakflag == 0):
-            Nunique = Nunique + 1           # Add another experiment to the list
-            for ind2 in range(0, ind-1):    # Check if experiment already run
+            Nunique = Nunique + 1         # Add another experiment to the list
+            for ind2 in range(0, ind-1):  # Check if experiment already run
                 if E1[ind2] == E1[ind]:     # If it has
                     Nunique = Nunique - 1   # then less are unique
                     break                   # Only needs to be true once
@@ -278,7 +279,7 @@ def cond(T, Data, location, LL, N, M, bigJ, bigH, bigHH, mu2, lam2,
         print('Inversion finished, Location ', location + 1,
               ' (', round(endcond-startcond, 5), 'seconds elapsed )',
               len(rho), '/', DataDim[0], 'Points', warning)
-    elif(breakflag==1):
+    elif(breakflag == 1):
         condx = -1
         condy = -1
         r0 = -1
